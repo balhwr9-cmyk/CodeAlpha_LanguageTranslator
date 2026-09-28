@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Translator | CodeAlpha</title>
+<meta name="description" content="Translate text between 100+ languages - CodeAlpha AI Internship Task 1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1a1f;
+    --card: #26262d;
+    --field: #1d1d22;
+    --text: #ececf1;
+    --muted: #9a9aa6;
+    --border: #3a3a44;
+    --accent: #6c5ce7;
+    --accent-hover: #5a4bd1;
+    --ok: #55efc4;
+    --warn: #fdcb6e;
+    --err: #ff6b6b;
+  }
+  body.light {
+    --bg: #ebebef;
+    --card: #dcdce2;
+    --field: #f9f9fb;
+    --text: #1d1d22;
+    --muted: #6b6b76;
+    --border: #c3c3cc;
+    --ok: #00996f;
+    --warn: #b37400;
+    --err: #d63031;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background .25s, color .25s;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 24px; }
+
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+  h1 { font-size: clamp(24px, 4vw, 32px); font-weight: 800; letter-spacing: -.5px; }
+  .sub { color: var(--muted); margin-top: 4px; font-size: 15px; }
+
+  .switch { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; font-size: 14px; font-weight: 500; white-space: nowrap; padding-top: 8px; }
+  .track { width: 42px; height: 22px; border-radius: 11px; background: var(--accent); position: relative; transition: background .2s; }
+  .track::after { content: ""; position: absolute; top: 3px; left: 23px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .2s; }
+  body.light .track { background: #8a8a96; }
+  body.light .track::after { left: 3px; }
+
+  .bar {
+    background: var(--card); border-radius: 18px; padding: 14px;
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center;
+    margin-bottom: 18px;
+  }
+  select {
+    width: 100%; height: 46px; border-radius: 12px;
+    border: 2px solid var(--accent); background: var(--field); color: var(--text);
+    font: inherit; font-size: 15px; padding: 0 40px 0 14px; cursor: pointer;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, #fff 50%), linear-gradient(135deg, #fff 50%, transparent 50%), linear-gradient(var(--accent), var(--accent));
+    background-position: calc(100% - 22px) 20px, calc(100% - 16px) 20px, 100% 0;
+    background-size: 6px 6px, 6px 6px, 40px 100%;
+    background-repeat: no-repeat;
+  }
+  .swap {
+    width: 56px; height: 46px; border-radius: 23px; border: none;
+    background: var(--accent); color: #fff; font-size: 22px; cursor: pointer;
+    transition: background .2s, transform .3s;
+  }
+  .swap:hover { background: var(--accent-hover); transform: rotate(180deg); }
+
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card { background: var(--card); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; }
+  .card h2 { font-size: 16px; font-weight: 700; margin: 2px 4px 10px; }
+  textarea {
+    flex: 1; min-height: 300px; resize: vertical;
+    background: var(--field); color: var(--text);
+    border: none; border-radius: 14px; padding: 16px;
+    font: inherit; font-size: 17px; line-height: 1.55; outline: none;
+  }
+  textarea:focus { box-shadow: 0 0 0 2px var(--accent); }
+  textarea[readonly] { cursor: default; }
+  textarea[readonly]:focus { box-shadow: none; }
+
+  .row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .spacer { flex: 1; }
+  .count { color: var(--muted); font-size: 13px; }
+  .count.over { color: var(--err); }
+
+  button.btn {
+    height: 40px; padding: 0 18px; border-radius: 10px; font: inherit; font-size: 14px;
+    font-weight: 600; cursor: pointer; transition: background .2s, opacity .2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .primary { background: var(--accent); color: #fff; border: none; font-size: 15px !important; padding: 0 22px !important; }
+  .primary:hover { background: var(--accent-hover); }
+  .primary:disabled { opacity: .6; cursor: wait; }
+  .ghost { background: transparent; color: var(--text); border: 1px solid var(--accent); }
+  .ghost.plain { border-color: var(--border); }
+  .ghost:hover { background: rgba(108, 92, 231, .15); }
+
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: none; }
+  .loading .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status { margin-top: 16px; font-size: 13px; color: var(--muted); min-height: 18px; padding-left: 4px; }
+  .status.ok { color: var(--ok); } .status.warn { color: var(--warn); } .status.err { color: var(--err); }
+
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 28px; }
+  footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 20px 16px; }
+    .panels { grid-template-columns: 1fr; }
+    textarea { min-height: 180px; }
+    .bar { grid-template-columns: 1fr; }
+    .swap { justify-self: center; transform: rotate(90deg); }
+    .swap:hover { transform: rotate(270deg); }
+    header { flex-direction: column; gap: 6px; }
+    .switch { padding-top: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🌐 Language Translator</h1>
+      <p class="sub">Translate text between 100+ languages instantly</p>
+    </div>
+    <label class="switch" id="modeSwitch"><span class="track"></span><span>Dark mode</span></label>
+  </header>
+
+  <section class="bar">
+    <select id="source" aria-label="Source language"></select>
+    <button class="swap" id="swap" title="Swap languages">⇄</button>
+    <select id="target" aria-label="Target language"></select>
+  </section>
+
+  <section class="panels">
+    <div class="card">
+      <h2>Enter text</h2>
+      <textarea id="input" dir="auto" placeholder="Type or paste your text here..." maxlength="5000"></textarea>
+      <div class="row">
+        <button class="btn ghost plain" id="clear">Clear</button>
+        <span class="spacer"></span>
+        <span class="count" id="count">0 / 5000</span>
+        <button class="btn primary" id="translate"><span class="spinner"></span><span id="tLabel">Translate →</span></button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Translation</h2>
+      <textarea id="output" dir="auto" readonly placeholder="Translation will appear here"></textarea>
+      <div class="row">
+        <span class="spacer"></span>
+        <button class="btn ghost" id="listen">🔊 Listen</button>
+        <button class="btn ghost" id="copy">📋 Copy</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="status" id="status">Ready • Ctrl+Enter to translate</p>
+
+  <footer>Built by <a href="https://github.com/balhwr9-cmyk/CodeAlpha_LanguageTranslator" target="_blank" rel="noopener">balhwr9-cmyk</a> • CodeAlpha AI Internship — Task 1</footer>
+</div>
+
+<script>
+const LANGUAGES = {
+  "Afrikaans":"af","Albanian":"sq","Amharic":"am","Arabic":"ar","Armenian":"hy","Azerbaijani":"az",
+  "Basque":"eu","Belarusian":"be","Bengali":"bn","Bosnian":"bs","Bulgarian":"bg","Catalan":"ca",
+  "Cebuano":"ceb","Chinese (Simplified)":"zh-CN","Chinese (Traditional)":"zh-TW","Croatian":"hr",
+  "Czech":"cs","Danish":"da","Dutch":"nl","English":"en","Esperanto":"eo","Estonian":"et",
+  "Filipino":"tl","Finnish":"fi","French":"fr","Galician":"gl","Georgian":"ka","German":"de",
+  "Greek":"el","Gujarati":"gu","Haitian Creole":"ht","Hausa":"ha","Hebrew":"iw","Hindi":"hi",
+  "Hungarian":"hu","Icelandic":"is","Igbo":"ig","Indonesian":"id","Irish":"ga","Italian":"it",
+  "Japanese":"ja","Javanese":"jw","Kannada":"kn","Kazakh":"kk","Khmer":"km","Korean":"ko",
+  "Kurdish (Kurmanji)":"ku","Kyrgyz":"ky","Lao":"lo","Latin":"la","Latvian":"lv","Lithuanian":"lt",
+  "Macedonian":"mk","Malagasy":"mg","Malay":"ms","Malayalam":"ml","Maltese":"mt","Maori":"mi",
+  "Marathi":"mr","Mongolian":"mn","Nepali":"ne","Norwegian":"no","Pashto":"ps","Persian":"fa",
+  "Polish":"pl","Portuguese":"pt","Punjabi":"pa","Romanian":"ro","Russian":"ru","Serbian":"sr",
+  "Sindhi":"sd","Sinhala":"si","Slovak":"sk","Slovenian":"sl","Somali":"so","Spanish":"es",
+  "Swahili":"sw","Swedish":"sv","Tajik":"tg","Tamil":"ta","Telugu":"te","Thai":"th","Turkish":"tr",
+  "Ukrainian":"uk","Urdu":"ur","Uzbek":"uz","Vietnamese":"vi","Welsh":"cy","Xhosa":"xh",
+  "Yiddish":"yi","Yoruba":"yo","Zulu":"zu"
+};
+const NAMES = Object.keys(LANGUAGES);
+const MAX = 5000;
+const $ = id => document.getElementById(id);
+
+// ---------- fill the language menus ----------
+$("source").add(new Option("Auto Detect", "auto"));
+for (const name of NAMES) {
+  $("source").add(new Option(name, LANGUAGES[name]));
+  $("target").add(new Option(name, LANGUAGES[name]));
+}
+$("source").value = "auto";
+$("target").value = "ar";
+
+// ---------- helpers ----------
+function setStatus(text, kind = "") {
+  $("status").textContent = text;
+  $("status").className = "status " + kind;
+}
+function updateCount() {
+  const n = $("input").value.length;
+  $("count").textContent = `${n} / ${MAX}`;
+  $("count").classList.toggle("over", n > MAX);
+}
+const langName = code => NAMES.find(n => LANGUAGES[n] === code) || code;
+
+// ---------- translation APIs ----------
+async function translateGoogle(text, sl, tl) {
+  const url = "https://translate.googleapis.com/translate_a/single?client=gtx&dt=t"
+            + `&sl=${sl}&tl=${tl}&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Google HTTP " + res.status);
+  const data = await res.json();
+  return data[0].map(part => part[0]).join("");
+}
+
+async function translateMyMemory(text, sl, tl) {
+  // MyMemory accepts ~500 characters per request, so send the text in pieces
+  const pieces = [];
+  let piece = "";
+  for (const word of text.split(" ")) {
+    if (piece && (piece.length + word.length + 1) > 450) { pieces.push(piece); piece = word; }
+    else piece = piece ? piece + " " + word : word;
+  }
+  if (piece) pieces.push(piece);
+
+  const src = sl === "auto" ? "autodetect" : sl;
+  const out = [];
+  for (const p of pieces) {
+    const url = "https://api.mymemory.translated.net/get?q=" + encodeURIComponent(p)
+              + `&langpair=${src}|${tl}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (Number(data.responseStatus) !== 200) throw new Error(data.responseDetails || "MyMemory error");
+    out.push(data.responseData.translatedText);
+  }
+  return out.join(" ");
+}
+
+async function translateText(text, sl, tl) {
+  try {
+    return { text: await translateGoogle(text, sl, tl), service: "Google" };
+  } catch (e) {
+    console.warn("Google failed, trying MyMemory:", e);
+    return { text: await translateMyMemory(text, sl, tl), service: "MyMemory" };
+  }
+}
+
+// ---------- actions ----------
+async function translate() {
+  const text = $("input").value.trim();
+  if (!text) return setStatus("Please enter some text to translate.", "warn");
+  if (text.length > MAX) return setStatus(`Text must be under ${MAX} characters.`, "err");
+
+  const btn = $("translate");
+  btn.disabled = true; btn.classList.add("loading"); $("tLabel").textContent = "Translating...";
+  setStatus("Translating...");
+  try {
+    const tl = $("target").value;
+    const result = await translateText(text, $("source").value, tl);
+    $("output").value = result.text;
+    setStatus(`✓ Translated to ${langName(tl)}  (via ${result.service})`, "ok");
+  } catch (e) {
+    console.error(e);
+    setStatus("Translation failed. Check your internet and try again in a minute.", "err");
+  } finally {
+    btn.disabled = false; btn.classList.remove("loading"); $("tLabel").textContent = "Translate →";
+  }
+}
+
+function swap() {
+  const src = $("source").value, tgt = $("target").value;
+  if (src === "auto") return setStatus("Pick a source language first (not Auto Detect) to swap.", "warn");
+  $("source").value = tgt; $("target").value = src;
+  if ($("output").value) { $("input").value = $("output").value; $("output").value = ""; updateCount(); }
+}
+
+async function copy() {
+  const out = $("output").value;
+  if (!out) return setStatus("Nothing to copy yet.", "warn");
+  try {
+    await navigator.clipboard.writeText(out);
+  } catch {
+    $("output").select(); document.execCommand("copy");
+  }
+  setStatus("✓ Translation copied to clipboard", "ok");
+}
+
+function listen() {
+  const out = $("output").value;
+  if (!out) return setStatus("Translate something first.", "warn");
+  if (!("speechSynthesis" in window)) return setStatus("Text-to-speech isn't supported in this browser.", "err");
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(out);
+  const code = $("target").value.replace("iw", "he").replace("jw", "jv");
+  u.lang = code;
+  const voice = speechSynthesis.getVoices().find(v => v.lang.toLowerCase().startsWith(code.split("-")[0].toLowerCase()));
+  if (voice) u.voice = voice;
+  u.onend = () => setStatus("Ready • Ctrl+Enter to translate");
+  speechSynthesis.speak(u);
+  setStatus("🔊 Playing audio");
+}
+
+function clearAll() {
+  $("input").value = ""; $("output").value = ""; updateCount();
+  setStatus("Ready • Ctrl+Enter to translate");
+}
+
+$("translate").onclick = translate;
+$("swap").onclick = swap;
+$("copy").onclick = copy;
+$("listen").onclick = listen;
+$("clear").onclick = clearAll;
+$("input").addEventListener("input", updateCount);
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "Enter") translate(); });
+$("modeSwitch").onclick = () => document.body.classList.toggle("light");
+speechSynthesis?.getVoices();
+</script>
+</body>
+</html>
