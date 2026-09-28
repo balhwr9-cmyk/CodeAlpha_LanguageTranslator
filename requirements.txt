@@ -1,0 +1,4 @@
+customtkinter>=5.2.0
+deep-translator>=1.11.4
+gTTS>=2.5.0
+requests>=2.25
